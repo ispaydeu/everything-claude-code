@@ -19,7 +19,7 @@ Everything Claude Code (ECC) is a **performance optimization system for AI agent
 - **Rules** (common + language-specific overlays) that act as always-on policy layers
 - **MCP server configurations** for optional external tool wiring (GitHub, Supabase, Vercel, etc.)
 - **Cross-platform Node.js scripts** implementing hook behavior, CI validation, and utilities
-- **Three user-facing guides** (shortform, longform, security) plus plugin packaging for easy installation
+- **Three primary user-facing guides** (shortform, longform, security), plus additional specialized guides and docs such as `the-openclaw-guide.md` and the `docs/` directory, and plugin packaging for easy installation
 
 ECC is packaged as a **Claude Code plugin** (via `.claude-plugin/plugin.json`) so it can be installed from the plugin marketplace, and it also supports **manual installation** via `install.sh` for maximum control. It works across Claude Code, Codex, Cursor, Cowork, and other AI agent harnesses, but this report focuses exclusively on **Claude Code terminal / CLI**.
 
@@ -52,7 +52,7 @@ The project is authored by Affaan Mustafa, is MIT-licensed, and at version **1.8
 | **P2** | `agents/` directory | All 16 agent definitions | Each `.md` file has YAML frontmatter (name, description, tools, model) | Reference |
 | **P2** | `skills/` directory | All 65 skill directories | Each contains workflow knowledge, patterns, optional scripts | Reference |
 | **P2** | `scripts/` directory | Hook implementations, CI validators, utilities | Cross-platform Node.js code that hooks call | Reference |
-| **P2** | `tests/` directory | Test suite (1014 tests) | Validates agents, commands, rules, skills, hooks, and CI scripts | Reference |
+| **P2** | `tests/` directory | Test suite (`node tests/run-all.js`) | Validates agents, commands, rules, skills, hooks, and CI scripts; CI expects a clean pass | Reference |
 
 > **Source:** Repository file tree, each file's content
 
@@ -267,9 +267,9 @@ export ECC_DISABLED_HOOKS="pre:bash:tmux-reminder,post:edit:typecheck"
 node tests/run-all.js
 ```
 
-Current expected result: **1014 total tests, ~1010-1012 passing, 2-4 failing** (the remaining failures are in hook integration tests around blocking-hook behavior and are pre-existing).
+Expected result: the suite should complete successfully with **all tests passing** (that is, `node tests/run-all.js` should exit with status code `0`).
 
-> **⚠️ Correction — Test counts:** The four source analyses all reported "1010 passed, 4 failed." The current actual result at time of writing is **1012 passed, 2 failed** out of 1014 total. Test counts can fluctuate between runs and repo versions. The important point is: a small number of failures in hook integration tests are known and pre-existing. If you see more than ~5 failures, something may be wrong with your setup.
+> **⚠️ Correction — Test expectations:** Earlier analyses described "2–4 failing tests" as expected and pre-existing. That is misleading. In this repository, `tests/run-all.js` exits non-zero when any tests fail, and CI runs `node tests/run-all.js`, so **any failure should be treated as a real problem to investigate**. Test totals may change over time as the suite evolves, but the operational expectation is a clean pass.
 
 > **Source:** `README.md` (Installation), `install.sh` (installer behavior), `hooks/README.md` (runtime controls), `rules/README.md` (rules installation)
 
@@ -315,7 +315,7 @@ Current expected result: **1014 total tests, ~1010-1012 passing, 2-4 failing** (
 | Strategic compact | PreToolUse | Suggests `/compact` at ~50 tool calls | Prevents context overflow |
 | Quality gate | PostToolUse | Runs quality checks after edits (async) | Continuous quality feedback |
 | TypeScript check | PostToolUse | Runs `tsc --noEmit` after `.ts`/`.tsx` edits | Catches type errors immediately |
-| Prettier format | PostToolUse | Auto-formats JS/TS files | Consistent code style |
+| Code formatter | PostToolUse | Auto-formats JS/TS files using Biome or Prettier (auto-detected) | Consistent code style |
 | Console.log warning | PostToolUse + Stop | Warns about console.log statements | Prevents debug code in commits |
 | Pre-compact saver | PreCompact | Saves state before context compaction | Preserves knowledge through compaction |
 | Session persistence | Stop | Persists session state for next session | Continuity across sessions |
@@ -536,7 +536,7 @@ The shortform guide explicitly warns: **MCP servers consume context window.** Wi
 
 > **Source:** `the-shortform-guide.md`, `the-longform-guide.md`, `the-security-guide.md`, `commands/`, `agents/`
 
-> **⚠️ Correction — MCP server count limit:** One source analysis stated "Keep enabled MCP servers below roughly 10." This is **reasonable guidance** but not a hard limit found in the repository. The actual constraint from `the-shortform-guide.md` is about context window management: each MCP server adds tools to the context, and too many tools reduce the available context for actual work. The number 10 is an inference, not a documented threshold. Future AI sessions should cite the context window concern rather than a specific number.
+> **⚠️ Correction — MCP server count limit:** One source analysis stated "Keep enabled MCP servers below roughly 10." The repository does in fact include similar guidance — `the-shortform-guide.md` says to "keep under 10 enabled / under 80 tools active," and `mcp-configs/mcp-servers.json` includes the comment `"Keep under 10 MCPs enabled to preserve context window"`. This should be treated as a **rule of thumb for context-window management**, not a strict enforced cap. Future AI sessions should preserve the under-10 guidance while making clear it is heuristic rather than a validator or runtime limit.
 
 ---
 
@@ -589,7 +589,7 @@ git clone https://github.com/ispaydeu/everything-claude-code.git
 
 9. **The `agents` field in plugin.json must use explicit file paths, not directories.** Using `"agents": ["./agents/"]` will fail validation. You must enumerate each agent file. This is an undocumented validator constraint.
 
-10. **Test failures are expected.** 2-4 test failures in hook integration tests (blocking-hook behavior) are pre-existing and do not indicate a broken installation.
+10. **The test suite is expected to pass cleanly.** If `node tests/run-all.js` reports failures, investigate them rather than assuming they are normal, because CI also runs that command and treats failures as real breakages.
 
 ### Source Conflicts Between the Four Analyses
 
@@ -597,8 +597,8 @@ git clone https://github.com/ispaydeu/everything-claude-code.git
 |-------|----------|------------|
 | Command count | Some said 41, some said 40+ | **40 commands** verified by `ls commands/*.md \| wc -l` |
 | Skill count | Some said 67, some said 65+ | **65 skill directories** verified by `ls -d skills/*/ \| wc -l` |
-| Test results | All said 1010/4 | **1012/2 at time of writing** — counts fluctuate; 2-4 failures are normal |
-| MCP limit | One said "below ~10" | **No hard limit** — guidance is about context window, not a number |
+| Test results | All said 1010/4 | **The suite is expected to pass cleanly**; totals may change over time, but failures should be investigated |
+| MCP limit | One said "below ~10" | **Repo guidance says keep under ~10 enabled**, but as a rule of thumb for context-window management |
 | `/security-scan` listed as command | README lists it as key command | **It's a skill (`skills/security-scan/`), not a command (`commands/security-scan.md` does not exist)** |
 
 ### What Is Still Unknown or Needs Verification
@@ -653,8 +653,8 @@ git clone https://github.com/ispaydeu/everything-claude-code.git
 |------------|---------------|-----------------|---------------|
 | Command count | "41 commands" | **40 command files** in `commands/` | `ls commands/*.md \| wc -l` |
 | Skill count | "67 skills" | **65 skill directories** in `skills/` | `ls -d skills/*/ \| wc -l` |
-| Test results | "1010 passed, 4 failed" | **~1012 passed, ~2 failed** (fluctuates) | `node tests/run-all.js` |
-| MCP server limit | "below ~10 servers" | No hard limit; concern is **context window consumption** | `the-shortform-guide.md` — MCP section |
+| Test results | "1010 passed, 4 failed" | **The suite is expected to pass cleanly**; totals may change over time | `tests/run-all.js`, `.github/workflows/reusable-test.yml` |
+| MCP server limit | "below ~10 servers" | **Repo guidance says keep under ~10 enabled**, as a context-window heuristic | `the-shortform-guide.md`, `mcp-configs/mcp-servers.json` |
 | `/security-scan` | Listed as a command | **It's a skill** (`skills/security-scan/`), no `commands/security-scan.md` exists | `ls commands/security-scan.md` (will 404) |
 | Rules auto-install | Ambiguous phrasing | Rules are **never** installed by the plugin; `install.sh` or manual copy **always** required | `install.sh` source, `.claude-plugin/plugin.json` (no rules field) |
 | Hook duplicate error | Insufficiently explained | Claude Code v2.1+ auto-loads `hooks/hooks.json`; adding to manifest causes duplicate error; documented flip-flop history in `PLUGIN_SCHEMA_NOTES.md` | `.claude-plugin/PLUGIN_SCHEMA_NOTES.md` |
