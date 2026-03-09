@@ -12,7 +12,7 @@
 | Question | Answer |
 |----------|--------|
 | Was PR #5 merged into the default branch? | **No.** PR #5 is `open` as of 2026-03-08T11:47:41Z. GitHub API confirms `"merged": false`. No merge commit exists. |
-| Did PR #5 produce a committed final Markdown document? | **Yes — but only on the PR #5 branch**, not on `main`. The file `docs/ecc-expert-bootstrapping-report.md` (798 lines) was committed to branch `copilot/merge-quick-start-documents` across 3 commits, the latest being `21bcb2e`. |
+| Did PR #5 produce a committed final Markdown document? | **Yes — but only on the PR #5 branch**, not on `main`. The file `docs/ecc-expert-bootstrapping-report.md` was committed to branch `copilot/merge-quick-start-documents` across 3 commits, the latest being `21bcb2e`. |
 | Was the document recovered to the current branch? | **Yes.** See section 4. |
 
 ---
