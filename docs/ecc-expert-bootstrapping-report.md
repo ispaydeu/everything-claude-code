@@ -777,7 +777,7 @@ PreToolUse → [auto-tmux-dev, tmux-reminder, git-push-reminder,
 Tool executes
      │
      ▼
-PostToolUse → [pr-logger, build-analysis, quality-gate, prettier-format,
+PostToolUse → [pr-logger, build-analysis, quality-gate, post:edit:format,
                typecheck, console-log-warning, continuous-learning]
      │
      ▼
